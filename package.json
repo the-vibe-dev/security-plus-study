@@ -1,0 +1,40 @@
+{
+  "name": "security-plus-study",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "start": "node server.mjs",
+    "check": "node --test",
+    "practical:validate": "python3 scripts/validate_practical_package.py",
+    "practical:dry-run": "node practical-import.mjs security_plus_sy0_701_practical_site_upgrade.zip ./data --dry-run",
+    "seed": "node scripts/setup-content.mjs",
+    "start:local": "bash start-local.sh"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "^5.3.0",
+    "csv-parse": "^7.0.3",
+    "fflate": "^0.8.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "vite": "^7.3.7"
+  },
+  "description": "Free local Security+ SY0-701 study app with 1,546 practice items, 18 assessments, interactive PBQs, simulated CLI labs, and progress tracking.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/the-vibe-dev/security-plus-study.git"
+  },
+  "bugs": {
+    "url": "https://github.com/the-vibe-dev/security-plus-study/issues"
+  }
+}

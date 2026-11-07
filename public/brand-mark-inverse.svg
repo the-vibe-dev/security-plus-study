@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Security+ Study mark">
+  <defs>
+    <mask id="cutout">
+      <path fill="#fff" d="M32 2 58 15v20c0 13.5-8.4 21.3-26 28C14.4 56.3 6 48.5 6 35V15L32 2Z"/>
+      <path fill="#000" d="M27 21h10v9h8v9h-8v8H27v-8h-8v-9h8z"/>
+    </mask>
+  </defs>
+  <g mask="url(#cutout)">
+    <path fill="#e9f8fa" d="M32 2 58 15v20c0 13.5-8.4 21.3-26 28C14.4 56.3 6 48.5 6 35V15L32 2Z"/>
+    <path fill="#39c8c6" d="M32 0h30v64H32z"/>
+    <path fill="#b6e9ee" d="M32 2 6 15v13L32 14z"/>
+    <path fill="#a6e9e8" d="M58 35v8L32 63V51z"/>
+  </g>
+</svg>

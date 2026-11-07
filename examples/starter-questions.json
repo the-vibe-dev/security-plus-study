@@ -1,0 +1,364 @@
+{
+  "questions": [
+    {
+      "question": "Which security property prevents unauthorized disclosure?",
+      "options": [
+        "Confidentiality",
+        "Availability",
+        "Integrity",
+        "Non-repudiation"
+      ],
+      "answer": "Confidentiality",
+      "domain": "1",
+      "explanation": "Confidentiality limits information disclosure to authorized parties."
+    },
+    {
+      "question": "Which control detects a changed download?",
+      "options": [
+        "Cryptographic hash comparison",
+        "Load balancing",
+        "Disk mirroring",
+        "Account lockout"
+      ],
+      "answer": "Cryptographic hash comparison",
+      "domain": "1",
+      "explanation": "Comparing a trusted hash with the downloaded file helps detect changes."
+    },
+    {
+      "question": "Which pair represents two distinct authentication factors?",
+      "options": [
+        "Password and hardware security key",
+        "Password and PIN",
+        "PIN and security question",
+        "Two different passwords"
+      ],
+      "answer": "Password and hardware security key",
+      "domain": "1",
+      "explanation": "A password is something you know; a hardware key is something you have."
+    },
+    {
+      "question": "An employee receives only the permissions needed for assigned tasks. Which principle is applied?",
+      "options": [
+        "Least privilege",
+        "Implicit trust",
+        "Open access",
+        "Security through obscurity"
+      ],
+      "answer": "Least privilege",
+      "domain": "1",
+      "explanation": "Least privilege reduces the impact of account misuse."
+    },
+    {
+      "question": "Which control is primarily preventive?",
+      "options": [
+        "A firewall rule blocking unauthorized inbound traffic",
+        "An audit log reviewed after an incident",
+        "A forensic disk image",
+        "A monthly incident report"
+      ],
+      "answer": "A firewall rule blocking unauthorized inbound traffic",
+      "domain": "1",
+      "explanation": "Blocking traffic prevents a prohibited connection before it is established."
+    },
+    {
+      "question": "Which key verifies a digital signature?",
+      "options": [
+        "The signer\u2019s public key",
+        "The recipient\u2019s private key",
+        "A shared password",
+        "The signer\u2019s session cookie"
+      ],
+      "answer": "The signer\u2019s public key",
+      "domain": "1",
+      "explanation": "Signatures are created with the private key and verified with the corresponding public key."
+    },
+    {
+      "question": "An unexpected text message asks an employee to open a payroll link. What attack is this?",
+      "options": [
+        "Smishing",
+        "Vishing",
+        "Tailgating",
+        "Shoulder surfing"
+      ],
+      "answer": "Smishing",
+      "domain": "2",
+      "explanation": "Smishing uses SMS or similar text messaging for phishing."
+    },
+    {
+      "question": "Which technique best mitigates SQL injection?",
+      "options": [
+        "Parameterized queries",
+        "Longer database names",
+        "Client-side input hints alone",
+        "Disabling database backups"
+      ],
+      "answer": "Parameterized queries",
+      "domain": "2",
+      "explanation": "Parameterized queries separate data values from executable query structure."
+    },
+    {
+      "question": "Malware encrypts company documents and demands payment. What is it?",
+      "options": [
+        "Ransomware",
+        "A root certificate",
+        "A reverse proxy",
+        "A password manager"
+      ],
+      "answer": "Ransomware",
+      "domain": "2",
+      "explanation": "Ransomware denies access to data or systems to demand payment."
+    },
+    {
+      "question": "An attacker follows an authorized worker through a secured door. What occurred?",
+      "options": [
+        "Tailgating",
+        "DNS poisoning",
+        "Credential stuffing",
+        "On-path interception"
+      ],
+      "answer": "Tailgating",
+      "domain": "2",
+      "explanation": "Tailgating bypasses physical access controls by following an authorized person."
+    },
+    {
+      "question": "A service is overwhelmed by traffic from many compromised devices. What attack is this?",
+      "options": [
+        "Distributed denial of service",
+        "Privilege separation",
+        "Pass-the-hash",
+        "Directory traversal"
+      ],
+      "answer": "Distributed denial of service",
+      "domain": "2",
+      "explanation": "A DDoS attack uses distributed sources to exhaust resources and reduce availability."
+    },
+    {
+      "question": "Attackers try previously leaked username and password pairs on a new site. What is this?",
+      "options": [
+        "Credential stuffing",
+        "Password spraying",
+        "Port scanning",
+        "ARP inspection"
+      ],
+      "answer": "Credential stuffing",
+      "domain": "2",
+      "explanation": "Credential stuffing reuses known credential pairs; password spraying tries a few common passwords across accounts."
+    },
+    {
+      "question": "Which design limits lateral movement between network segments?",
+      "options": [
+        "Segmentation with enforced access rules",
+        "One flat network",
+        "Shared administrator credentials",
+        "Disabling internal firewalls"
+      ],
+      "answer": "Segmentation with enforced access rules",
+      "domain": "3",
+      "explanation": "Segmentation limits which systems can communicate and reduces an attacker\u2019s reach."
+    },
+    {
+      "question": "Which protocol provides encrypted remote terminal access?",
+      "options": [
+        "SSH",
+        "Telnet",
+        "TFTP",
+        "HTTP"
+      ],
+      "answer": "SSH",
+      "domain": "3",
+      "explanation": "SSH encrypts remote terminal sessions; Telnet does not."
+    },
+    {
+      "question": "Which mechanism protects data on a stolen powered-off laptop?",
+      "options": [
+        "Full-disk encryption",
+        "A login banner",
+        "A network intrusion sensor",
+        "DNS filtering"
+      ],
+      "answer": "Full-disk encryption",
+      "domain": "3",
+      "explanation": "Full-disk encryption protects stored data when keys are unavailable to the thief."
+    },
+    {
+      "question": "Which architecture assumes no implicit trust based on network location?",
+      "options": [
+        "Zero trust",
+        "A flat trusted LAN",
+        "An unrestricted VPN",
+        "An allow-all firewall"
+      ],
+      "answer": "Zero trust",
+      "domain": "3",
+      "explanation": "Zero trust evaluates access explicitly rather than granting trust based only on location."
+    },
+    {
+      "question": "Which backup approach keeps a copy unavailable for ordinary online modification?",
+      "options": [
+        "Offline backup",
+        "A writable network share",
+        "A mounted sync folder",
+        "An active replica with shared admin credentials"
+      ],
+      "answer": "Offline backup",
+      "domain": "3",
+      "explanation": "Offline backups reduce exposure to ransomware that can reach online storage."
+    },
+    {
+      "question": "Which network area commonly hosts public-facing services separated from internal systems?",
+      "options": [
+        "A screened subnet (DMZ)",
+        "The management VLAN only",
+        "A loopback interface",
+        "An unrestricted workstation LAN"
+      ],
+      "answer": "A screened subnet (DMZ)",
+      "domain": "3",
+      "explanation": "A screened subnet separates public services from internal trusted resources."
+    },
+    {
+      "question": "Which port is commonly used for HTTPS?",
+      "options": [
+        "443",
+        "23",
+        "69",
+        "110"
+      ],
+      "answer": "443",
+      "domain": "4",
+      "explanation": "HTTPS commonly uses TCP port 443 for HTTP over TLS."
+    },
+    {
+      "question": "A SIEM correlates failed logins across multiple hosts. What is its main role?",
+      "options": [
+        "Centralized log analysis and alerting",
+        "Replacing all endpoint controls",
+        "Encrypting backups",
+        "Assigning IP addresses"
+      ],
+      "answer": "Centralized log analysis and alerting",
+      "domain": "4",
+      "explanation": "SIEM platforms aggregate security events and support detection through correlation."
+    },
+    {
+      "question": "A compromised workstation is actively communicating with an attacker. Which action contains it?",
+      "options": [
+        "Isolate it from the network",
+        "Immediately delete all logs",
+        "Publish its password",
+        "Disable every backup"
+      ],
+      "answer": "Isolate it from the network",
+      "domain": "4",
+      "explanation": "Isolation can stop ongoing communication while preserving evidence for investigation."
+    },
+    {
+      "question": "Which record tracks who handled evidence and when?",
+      "options": [
+        "Chain of custody",
+        "A service catalog",
+        "A network lease",
+        "A password policy"
+      ],
+      "answer": "Chain of custody",
+      "domain": "4",
+      "explanation": "Chain of custody records evidence possession and transfer to support its integrity."
+    },
+    {
+      "question": "A terminated user retains an active account. What should be done?",
+      "options": [
+        "Disable access through the offboarding process",
+        "Wait for the password to expire",
+        "Share the account with a replacement",
+        "Remove audit logs"
+      ],
+      "answer": "Disable access through the offboarding process",
+      "domain": "4",
+      "explanation": "Timely offboarding revokes access and reduces the risk from unused accounts."
+    },
+    {
+      "question": "Which tool identifies listening network services?",
+      "options": [
+        "A port scanner",
+        "A file archiver",
+        "A certificate authority",
+        "A disk defragmenter"
+      ],
+      "answer": "A port scanner",
+      "domain": "4",
+      "explanation": "A port scanner probes ports to identify reachable services."
+    },
+    {
+      "question": "What does recovery point objective describe?",
+      "options": [
+        "The maximum acceptable data loss measured in time",
+        "The maximum acceptable recovery duration",
+        "The number of backup devices",
+        "The length of a password"
+      ],
+      "answer": "The maximum acceptable data loss measured in time",
+      "domain": "5",
+      "explanation": "RPO defines the point in time to which data must be recoverable; RTO concerns recovery duration."
+    },
+    {
+      "question": "An asset worth $100,000 has an exposure factor of 20%. What is its single loss expectancy?",
+      "options": [
+        "$20,000",
+        "$200,000",
+        "$5,000",
+        "$80,000"
+      ],
+      "answer": "$20,000",
+      "domain": "5",
+      "explanation": "Single loss expectancy is asset value multiplied by exposure factor: 100000 \u00d7 0.20."
+    },
+    {
+      "question": "A company buys insurance for a cyber risk. Which response is this?",
+      "options": [
+        "Transfer",
+        "Avoidance",
+        "Acceptance without action",
+        "Elimination"
+      ],
+      "answer": "Transfer",
+      "domain": "5",
+      "explanation": "Insurance transfers some financial consequences to another party; the underlying risk can remain."
+    },
+    {
+      "question": "Which exercise discusses incident decisions without disrupting production?",
+      "options": [
+        "A tabletop exercise",
+        "An unplanned outage",
+        "A destructive penetration test",
+        "A live disaster declaration"
+      ],
+      "answer": "A tabletop exercise",
+      "domain": "5",
+      "explanation": "A tabletop exercise walks through scenarios and decisions in a discussion setting."
+    },
+    {
+      "question": "Which agreement defines measurable service availability commitments?",
+      "options": [
+        "Service level agreement",
+        "Non-disclosure agreement",
+        "Acceptable use policy",
+        "Data inventory"
+      ],
+      "answer": "Service level agreement",
+      "domain": "5",
+      "explanation": "An SLA defines service commitments and metrics such as availability."
+    },
+    {
+      "question": "Who determines the business classification of a data set?",
+      "options": [
+        "The data owner",
+        "Any external visitor",
+        "The network carrier",
+        "An anonymous user"
+      ],
+      "answer": "The data owner",
+      "domain": "5",
+      "explanation": "The data owner is accountable for business decisions about classification and access requirements."
+    }
+  ]
+}

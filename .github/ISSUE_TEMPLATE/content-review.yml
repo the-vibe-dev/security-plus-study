@@ -1,0 +1,63 @@
+name: Questionable study content
+description: Request review of a question, PBQ, answer key, explanation, or interaction.
+title: "[Content review] <item ID>: <short concern>"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve this unofficial study aid. A concern requests review; it does not establish that the material is wrong.
+
+        **This issue will be public.** Do not upload raw Human Review exports, personal progress or scores, private study packs, proprietary training material, credentials, personal information, or real exam questions. Summarize the concern in your own words and cite references instead.
+  - type: input
+    id: item
+    attributes:
+      label: Question or PBQ ID
+      description: Include a PBQ task ID if the concern affects a specific task.
+      placeholder: "For example: SEC-Q033, or a PBQ ID and task T2"
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Study pack or interface
+      description: Identify the bundled pack or screen. Do not attach a private imported pack.
+      placeholder: "Test Prep 1, Test Prep 2, practical expansion, or custom-question interface"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area to review
+      options:
+        - Question wording or scenario
+        - Expected answer or answer key
+        - Explanation or rationale
+        - Interaction or grading
+        - Outdated reference or conflicting training
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: concern
+    attributes:
+      label: Concern and expected behavior
+      description: Explain what seems questionable in your own words. Include a proposed correction if you have one; uncertainty is welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Supporting reference
+      description: Prefer public authoritative documentation or current exam objectives. A course/module/page citation is also useful; do not paste licensed course content or instructor communications.
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps and version (if relevant)
+      description: For interaction/grading issues, give minimal steps, the app version or commit if known, and browser. Omit personal progress and attempt records.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public-report check
+      options:
+        - label: I checked existing issues and removed personal data, raw review exports, restricted training material, and real exam content from this report.
+          required: true
