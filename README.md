@@ -16,7 +16,7 @@ A free, local study workspace for Security+ SY0-701 practice. Work through quest
 
 Practice includes matching, ordering, ports and protocols, acronyms, architecture roles, firewall rules, log interpretation, and simulated CLI tasks. Every item appears once across the assessment catalog; retakes reuse those fixed items. Assessment domain counts describe the practice material and do not reproduce an official exam blueprint or scoring formula.
 
-CLI exercises compare text against disclosed supported commands and display canned output. They never execute your commands. Firewall exercises evaluate simulated rules only.
+CLI exercises offer command choices, including distractors, compare the selected text with the lab fixture, and display canned output. They never execute your commands. Firewall exercises evaluate simulated rules only.
 
 ## Install and start
 
@@ -129,7 +129,7 @@ Each question needs at least two options and an answer. `domain`, `objective`, a
 
 Imported libraries and server progress live in `data/` by default. Set `STUDY_DATA_DIR` to choose another location and use that same value whenever you restart the app. Back up this directory to preserve server data. Browser sessions and Human Review notes require a separate browser backup or export.
 
-Re-running the installer preserves existing content and progress for the same study-bank version. Use separate data directories for different versions so saved attempts retain their original material.
+Re-running the installer preserves existing content and progress for the same study-bank version. Use separate data directories for different versions so saved attempts retain their original material. An administrator upgrading a shared installation can preserve the previous `practical-content.json` under `content-archive/<SHA-256 of its version string>.json` in the same data directory before replacing the current bank. Saved attempts use their original bank; new practice uses the current bank. Keep these archives with your data backups. If an original bank is missing, the app refuses to regrade that attempt with a different bank.
 
 The application does not send questions or progress to a third-party API. Fonts and assets are bundled locally. Installation contacts npm. Credentials, `.env` files, local data, dependencies, build output, unrelated archives, and private deployment records are excluded from Git.
 

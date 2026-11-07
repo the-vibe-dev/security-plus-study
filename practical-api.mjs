@@ -7,8 +7,7 @@ const CONTENT_FILE = 'practical-content.json';
 const STATE_FILE = 'practical-state.json';
 const MAX_ATTEMPT_ITEMS = 90;
 const API_LIMIT = 64 * 1024;
-let contentCache = null;
-let contentMtime = 0;
+const contentCache = new Map();
 const requestCounters = new Map();
 const stateQueues = new Map();
 
@@ -28,15 +27,26 @@ function writeAtomic(file, value) {
   const dir = fs.openSync(path.dirname(file), 'r');
   try { fs.fsyncSync(dir); } finally { fs.closeSync(dir); }
 }
-function getContent(dataDir) {
-  const file = path.join(dataDir, CONTENT_FILE);
+function getContent(dataDir, version = null) {
+  if (version !== null && (typeof version !== 'string' || !version || version.length > 200)) error(503, 'The original study bank for this attempt is unavailable.');
+  const file = version === null ? path.join(dataDir, CONTENT_FILE) : path.join(dataDir, 'content-archive', `${createHash('sha256').update(version).digest('hex')}.json`);
   let stat;
-  try { stat = fs.statSync(file); } catch { error(503, 'Practical content has not been imported.'); }
-  if (!contentCache || stat.mtimeMs !== contentMtime) {
-    contentCache = JSON.parse(fs.readFileSync(file, 'utf8'));
-    contentMtime = stat.mtimeMs;
+  try { stat = fs.statSync(file); } catch { error(503, version === null ? 'Practical content has not been imported.' : 'The original study bank for this attempt is unavailable.'); }
+  let cached = contentCache.get(file);
+  if (!cached || cached.mtime !== stat.mtimeMs || cached.size !== stat.size) {
+    cached = { value: JSON.parse(fs.readFileSync(file, 'utf8')), mtime: stat.mtimeMs, size: stat.size };
+    contentCache.set(file, cached);
+    if (contentCache.size > 8) contentCache.delete(contentCache.keys().next().value);
   }
-  return contentCache;
+  if (version !== null && cached.value.version !== version) error(503, 'The archived study bank does not match this attempt.');
+  return cached.value;
+}
+function contentForAttempt(dataDir, current, attempt) {
+  const version = attempt.contentVersion || attempt.manifestVersion;
+  if (typeof version !== 'string' || !version) error(503, 'The original study bank for this attempt is unavailable.');
+  const content = version === current.version ? current : getContent(dataDir, version);
+  if (attempt.contentSha256 && attempt.contentSha256 !== content.sha256) error(503, 'The study bank changed since this attempt started.');
+  return content;
 }
 function readState(dataDir) {
   return readFileJson(path.join(dataDir, STATE_FILE), { schemaVersion: 1, attempts: {}, learning: {}, archived: {}, activityDates: [] });
@@ -206,12 +216,14 @@ function routeId(pathname) { return /^\/api\/practical\/attempts\/([0-9a-f-]{36}
 
 async function handlePracticalApiLocked(req, res, pathname, { dataDir, owner, send, bodyBytes }) {
   try {
-    const content = getContent(dataDir);
+    let content = getContent(dataDir);
     const state = readState(dataDir);
     if (pathname === '/api/practical/overview' && req.method === 'GET') {
       const old = readFileJson(path.join(dataDir, 'progress.json'), { answers: {}, pbqs: {} });
       const attempts = Object.values(state.attempts).filter((item) => item.owner === owner).sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
-      for (const attempt of attempts) maybeExpire(state, attempt, content, dataDir);
+      for (const attempt of attempts) {
+        if (attempt.status === 'in_progress' && attempt.deadlineAt && Date.now() >= Date.parse(attempt.deadlineAt)) maybeExpire(state, attempt, contentForAttempt(dataDir, content, attempt), dataDir);
+      }
       return send(res, 200, { version: content.version, counts: content.counts, exams: content.exams.map((exam) => publicExam(exam, itemMap(content))),
         categories: Object.fromEntries(Object.entries(content.drills.categories).map(([id, category]) => [id, { title: category.title, count: category.question_ids.length }])),
         topics: [...new Set(content.questions.map((item) => item.topic))].sort(),
@@ -230,7 +242,11 @@ async function handlePracticalApiLocked(req, res, pathname, { dataDir, owner, se
         const exam = examMap(content).get(input.examId);
         if (!exam) error(404, 'Practice exam not found.');
         const existing = Object.values(state.attempts).find((attempt) => attempt.owner === owner && attempt.examId === exam.id && attempt.status === 'in_progress');
-        if (existing && !input.newAttempt) { maybeExpire(state, existing, content, dataDir); if (existing.status === 'in_progress') return send(res, 200, { attempt: safeAttempt(existing, content) }); }
+        if (existing && !input.newAttempt) {
+          const original = contentForAttempt(dataDir, content, existing);
+          maybeExpire(state, existing, original, dataDir);
+          if (existing.status === 'in_progress') return send(res, 200, { attempt: safeAttempt(existing, original) });
+        }
         selected = exam.items.map((entry) => ({ item: itemMap(content).get(entry.id), role: entry.role }));
         title = exam.title; examId = exam.id; version = exam.version; limitMinutes = exam.duration_minutes;
       } else {
@@ -240,7 +256,7 @@ async function handlePracticalApiLocked(req, res, pathname, { dataDir, owner, se
       }
       const now = new Date();
       const id = randomUUID();
-      const attempt = { id, owner, mode, title, examId, manifestVersion: version, status: 'in_progress',
+      const attempt = { id, owner, mode, title, examId, manifestVersion: version, contentVersion: content.version, contentSha256: content.sha256, status: 'in_progress',
         startedAt: now.toISOString(), deadlineAt: limitMinutes ? new Date(now.getTime() + limitMinutes * 60000).toISOString() : null,
         submittedAt: null, elapsedSeconds: null, questionIds: selected.map((entry) => entry.item.id),
         roles: Object.fromEntries(selected.map((entry) => [entry.item.id, entry.role])), responses: {}, flags: {}, cursor: 0,
@@ -252,6 +268,7 @@ async function handlePracticalApiLocked(req, res, pathname, { dataDir, owner, se
     if (match) {
       const [, id, action] = match;
       const attempt = currentAttempt(state, id, owner);
+      content = contentForAttempt(dataDir, content, attempt);
       maybeExpire(state, attempt, content, dataDir);
       if (!action && req.method === 'GET') return send(res, 200, { attempt: safeAttempt(attempt, content) });
       if (action === 'draft' && req.method === 'PUT') {
@@ -357,7 +374,9 @@ async function handlePracticalApiLocked(req, res, pathname, { dataDir, owner, se
     if (pathname === '/api/practical/simulate' && req.method === 'POST') {
       rateLimit(`${owner}:simulate`, 90);
       const input = parseBody(await bodyBytes(req, 2048));
-      const attempt = currentAttempt(state, input.attemptId, owner); maybeExpire(state, attempt, content, dataDir);
+      const attempt = currentAttempt(state, input.attemptId, owner);
+      content = contentForAttempt(dataDir, content, attempt);
+      maybeExpire(state, attempt, content, dataDir);
       if (attempt.status !== 'in_progress' || !attempt.questionIds.includes(input.questionId)) error(403, 'Simulator is unavailable for this item.');
       const item = itemMap(content).get(input.questionId);
       return send(res, 200, simulateCli(item, content.answerKeys[item.id], input.command));
@@ -365,7 +384,9 @@ async function handlePracticalApiLocked(req, res, pathname, { dataDir, owner, se
     if (pathname === '/api/practical/firewall/test' && req.method === 'POST') {
       rateLimit(`${owner}:firewall`, 120);
       const input = parseBody(await bodyBytes(req, 8192));
-      const attempt = currentAttempt(state, input.attemptId, owner); maybeExpire(state, attempt, content, dataDir);
+      const attempt = currentAttempt(state, input.attemptId, owner);
+      content = contentForAttempt(dataDir, content, attempt);
+      maybeExpire(state, attempt, content, dataDir);
       if (attempt.status !== 'in_progress' || !attempt.questionIds.includes(input.questionId)) error(403, 'Firewall test is unavailable for this item.');
       const item = itemMap(content).get(input.questionId);
       if (item.interaction.type !== 'firewall_rules') error(400, 'This is not a firewall item.');

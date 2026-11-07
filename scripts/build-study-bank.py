@@ -47,6 +47,6 @@ for number in range(1,11):
     write_json(name,exam)
 assert len(used)==900
 manifest=json.loads((ROOT/'PACKAGE_MANIFEST.json').read_text())
-manifest.update(date='2026-11-07',release_version='1.0.0',content_revision='sy701-study-2026-11-07',new_by_domain={str(d):sum(q['domain_id']==d for q in items) for d in range(1,6)})
+manifest.update(date='2026-11-07',release_version='1.1.0',content_revision='sy701-study-2026-11-07-r2',new_by_domain={str(d):sum(q['domain_id']==d for q in items) for d in range(1,6)})
 write_json('PACKAGE_MANIFEST.json',manifest)
-print('Study bank v1.0.0: 857 knowledge questions, 639 interactive items, 50 PBQs; 10 fixed exam manifests.')
+print('Study bank v1.1.0: 857 knowledge questions, 639 interactive items, 50 PBQs; 10 fixed exam manifests.')

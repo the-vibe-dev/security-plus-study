@@ -25,7 +25,11 @@ test('disclosed CLI choices cover supported equivalent forms without exposing in
     const pub = publicPracticalItem(q);
     assert.ok(pub.interaction.command_choices.length);
     assert.equal('output_preview_after_submission' in pub.interaction, false);
-    for (const form of pub.interaction.command_choices) assert.equal(simulateCli(q, key(q.id), form).accepted, true);
+    // Menus list every accepted form plus at least two wrong or out-of-scope forms, so the menu alone cannot reveal the answer.
+    const accepted = pub.interaction.command_choices.filter((form) => simulateCli(q, key(q.id), form).accepted);
+    for (const form of key(q.id).answer.accepted_commands) assert.ok(pub.interaction.command_choices.includes(form), `${q.id} ${form}`);
+    assert.ok(pub.interaction.command_choices.length >= 4, q.id);
+    assert.ok(pub.interaction.command_choices.length - accepted.length >= 2, q.id);
   }
   assert.match(item('SPX-CLI_TOOLS-013').prompt, /\/tmp\/staging.pem/);
   assert.match(item('SPX-CLI_TOOLS-016').prompt, /ssh.service.*20/);
@@ -53,10 +57,14 @@ test('scenarios distinguish permissions, EKU, issuer revocation and elapsed repa
     assert.match(q.prompt, /elapsed repair hours/);
   }
 });
-test('architecture cards do not imply serial network paths and minimal firewall scope is explicit', () => {
+test('architecture diagrams draw zones and typed links between known nodes, and minimal firewall scope is explicit', () => {
   for (const q of bundle.questions.filter((q) => q.interaction.type === 'topology')) {
-    assert.deepEqual(q.stimulus.connections, []);
-    assert.match(q.prompt, /do not depict packet flow/);
+    const ids = new Set([...q.interaction.slots.map((slot) => slot.id), ...q.stimulus.anchors.map((anchor) => anchor.id)]);
+    assert.ok(q.stimulus.zones.length >= 4 && q.stimulus.anchors.length >= 1 && q.stimulus.connections.length >= 5, q.id);
+    for (const edge of q.stimulus.connections) { assert.ok(ids.has(edge.from) && ids.has(edge.to), `${q.id} ${edge.from}->${edge.to}`); assert.ok(['traffic', 'admin', 'monitor'].includes(edge.kind), q.id); }
+    for (const slot of q.interaction.slots) assert.ok(q.stimulus.zones.some((zone) => slot.x > zone.x && slot.x < zone.x + zone.w && slot.y > zone.y && slot.y < zone.y + zone.h), `${q.id} ${slot.id} outside every zone`);
+    assert.match(q.prompt, /Solid arrows show the primary traffic path/);
+    assert.match(key(q.id).explanation, /Primary traffic path:/);
   }
   for (const q of bundle.questions.filter((q) => q.interaction.type === 'firewall_rules')) {
     assert.match(q.prompt, /exactly one narrowly scoped allow rule/);

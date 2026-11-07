@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 
-export const PRACTICAL_VERSION = 'sy701-study-2026-11-07';
+export const PRACTICAL_VERSION = 'sy701-study-2026-11-07-r2';
 const PREFIX = 'security_plus_practical_expansion/';
 const ID_PATTERN = /^(SEC(?:2)?-Q\d{3}|SEC(?:2)?-PBQ-\d{3}|SPX-[A-Z0-9_-]+)$/;
 

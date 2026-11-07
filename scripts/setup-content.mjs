@@ -14,7 +14,7 @@ const contentFile = path.join(dir, 'practical-content.json');
 // Keep saved attempts associated with their study-bank version.
 if (fs.existsSync(contentFile)) {
   const installed = JSON.parse(fs.readFileSync(contentFile, 'utf8'));
-  if (installed.version !== 'sy701-study-2026-11-07') throw new Error('This directory uses a different study-bank version. Preserve it for saved attempts and choose a separate STUDY_DATA_DIR for this installation.');
+  if (installed.version !== 'sy701-study-2026-11-07-r2') throw new Error('This directory uses a different study-bank version. Preserve it for saved attempts and choose a separate STUDY_DATA_DIR for this installation.');
 }
 // Validate bundled content before creating any study files.
 const sets = ['security_plus_sy0_701_study_pack.zip', 'test_prep_2_security_plus_sy0_701.zip']
