@@ -42,5 +42,6 @@
 .topology-legend{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--p-muted)}.topology-legend li{display:flex;align-items:center;gap:7px}.legend-line{display:inline-block;width:28px;border-top:3px solid #3d6b78}.legend-line.admin{border-top-style:dashed;border-top-color:#b26a00}.legend-line.monitor{border-top-style:dotted;border-top-color:#6a4fb3}
 
 .evidence-selection-instructions{margin:0 0 8px;font-weight:700}
+.evidence-table th{white-space:nowrap}
 .evidence-table input[type="checkbox"]{width:18px;height:18px;accent-color:var(--p-accent);cursor:pointer;vertical-align:middle}
 .evidence-table .selected-evidence>*{background:var(--p-soft)}
