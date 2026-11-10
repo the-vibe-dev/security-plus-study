@@ -69,14 +69,16 @@ Timed assessments reveal feedback after submission. Learning practice allows fee
 
 ## Review questionable material
 
-**Human Review** is a browser-local list of concerns to investigate. It is separate from mistakes, bookmarks, and per-attempt revisit markers.
+**Human Review** collects question and explanation concerns separately from mistakes, bookmarks, and per-attempt revisit markers.
 
 - Flag a question or a displayed explanation, choose a reason, and add an optional task ID, note, or reference.
 - Review concerns against trusted documentation, course material, or an instructor's guidance. Record the outcome before resolving a flag; resolving it does not edit the study bank or certify its accuracy.
 - Search and filter by Open, In review, or Resolved. The original captured content stays with the flag.
-- Export the shown reviews as JSON for your own inspection or backup. Automatic re-import is not included.
+- Export the shown reviews as JSON for inspection or backup.
 
-Flags are stored **only in this browser for this site's origin**. They do not sync across devices, browser profiles, ports, or domains. Export before clearing browser data. Storage failures leave the form open so you can copy your notes; stale forms cannot silently overwrite a newer review.
+On a site with a login, flags are saved on the server and can be reviewed from another browser using that login. Anyone with the same login can see them. Use **Copy browser flags to site** to transfer older flags from the browser where they were created. Copying retains existing site flags and the original browser records.
+
+In password-free local use, flags are saved in the browser for that origin. Export them before clearing browser data. Failed saves keep the form open, and stale forms cannot overwrite a newer review.
 
 No report is automatically sent anywhere. Exports do not automatically include learner answers, scores, or attempt IDs, but they do include captured study content and your free-text notes. Check them carefully before sharing, especially with custom imports. Do not include private information, restricted training material, credentials, or real exam questions.
 
@@ -127,7 +129,7 @@ Each question needs at least two options and an answer. `domain`, `objective`, a
 
 ## Data and privacy
 
-Imported libraries and server progress live in `data/` by default. Set `STUDY_DATA_DIR` to choose another location and use that same value whenever you restart the app. Back up this directory to preserve server data. Browser sessions and Human Review notes require a separate browser backup or export.
+Imported libraries, server progress, and authenticated Human Review flags live in `data/` by default. Set `STUDY_DATA_DIR` to choose another location and use that same value whenever you restart the app. Back up this directory to preserve server data. Browser sessions and browser-only flags require a separate browser backup or export.
 
 Re-running the installer preserves existing content and progress for the same study-bank version. Use separate data directories for different versions so saved attempts retain their original material. An administrator upgrading a shared installation can preserve the previous `practical-content.json` under `content-archive/<SHA-256 of its version string>.json` in the same data directory before replacing the current bank. Saved attempts use their original bank; new practice uses the current bank. Keep these archives with your data backups. If an original bank is missing, the app refuses to regrade that attempt with a different bank.
 

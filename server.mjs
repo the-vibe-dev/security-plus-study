@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { importQuestionFile } from './import.mjs';
 import { gradeQuiz, gradePbq } from './scoring.mjs';
 import { handlePracticalApi } from './practical-api.mjs';
+import { handleContentReviews } from './content-review-api.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(ROOT, 'dist');
@@ -109,6 +110,7 @@ function validPbqResponse(task, response) {
 }
 async function api(req, res, pathname) {
   if (pathname === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true });
+  if (pathname === '/api/content-reviews') return handleContentReviews(req, res, { dataDir: DATA_DIR, owner: USER && PASSWORD ? USER : '', send, bodyBytes });
   if (pathname.startsWith('/api/practical/')) return handlePracticalApi(req, res, pathname, { dataDir: DATA_DIR, owner: USER || 'local-study-user', send, bodyBytes });
   if (fs.existsSync(PRACTICAL_CONTENT_FILE) && (pathname === '/api/answer' || pathname.startsWith('/api/pbq/') || pathname === '/api/import' || (pathname === '/api/library' && req.method === 'DELETE'))) return send(res, 410, { error: 'This legacy learning route is archived. Use the current Security+ practice engine.' });
   const library = readJson(LIBRARY_FILE, { sets: [] });

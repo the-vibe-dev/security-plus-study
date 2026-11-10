@@ -27,7 +27,7 @@ export function contentSnapshot(item, source = 'practical', feedback = null) {
   let snapshot;
   if (source === 'practical') {
     snapshot = pick(item, ['id', 'origin', 'exam_code', 'domain_id', 'domain_name', 'objective_id', 'topic', 'question_kind', 'prompt', 'stimulus', 'sources']);
-    snapshot.interaction = pick(item.interaction, ['type', 'options', 'candidate_ids', 'min_selections', 'max_selections', 'select_count', 'left', 'right', 'one_to_one', 'cards', 'events', 'slots', 'elements', 'unique_assignment', 'unit', 'placeholder', 'max_length', 'shell', 'command_placeholder', 'interpretation_options', 'max_user_rules']);
+    snapshot.interaction = pick(item.interaction, ['type', 'options', 'candidate_ids', 'min_selections', 'max_selections', 'select_count', 'left', 'right', 'one_to_one', 'cards', 'events', 'slots', 'elements', 'unique_assignment', 'canvas', 'role_assignment', 'unit', 'placeholder', 'max_length', 'shell', 'display', 'command_choices', 'command_placeholder', 'interpretation_options', 'max_user_rules']);
     if (item.interaction?.tasks) snapshot.interaction.tasks = item.interaction.tasks.map((task) => pick(task, ['id', 'prompt', 'response_type', 'options', 'selectCount', 'select_count']));
   } else if (source === 'legacy-question') {
     snapshot = pick(item, ['id', 'setId', 'domain', 'objective', 'topic', 'question', 'choices', 'selectCount']);
@@ -49,12 +49,15 @@ export function contentIdentity(item, source = 'practical') {
 export function reviewId(identity, target) {
   return JSON.stringify([identity.source, identity.setId, identity.itemId, target]);
 }
-function validateRecord(record) {
+export function validateRecord(record) {
   if (!record || !['practical', 'legacy-question', 'legacy-pbq'].includes(record.source) || typeof record.itemId !== 'string' || !record.itemId || typeof record.setId !== 'string' || !['question', 'explanation'].includes(record.target) || record.id !== reviewId(record, record.target)) throw new Error('Invalid review identity.');
   if (!Number.isSafeInteger(record.revision) || record.revision < 1) throw new Error('Invalid review revision.');
   if (!own(REASONS, record.reason) || !own(STATUSES, record.status)) throw new Error('Choose a reason and review status.');
   for (const key of ['createdAt', 'updatedAt']) if (!Number.isFinite(Date.parse(record[key]))) throw new Error('Invalid review date.');
   if (!record.snapshot || typeof record.snapshot !== 'object' || Array.isArray(record.snapshot) || typeof record.title !== 'string') throw new Error('Missing content snapshot.');
+  bounded(record.itemId, 2000, 'Item ID'); bounded(record.setId, 2000, 'Set ID'); bounded(record.title, 2000, 'Title');
+  if (record.examId !== undefined) bounded(record.examId, 200, 'Exam ID');
+  if (record.bankVersion !== undefined) bounded(record.bankVersion, 200, 'Bank version');
   bounded(record.note, 4000, 'Concern'); bounded(record.reference, 2000, 'Reference'); bounded(record.resolution, 4000, 'Review notes');
   if (record.outcome !== '' && !own(OUTCOMES, record.outcome)) throw new Error('Choose a review outcome.');
   if (record.status === 'resolved' && (!record.resolution.trim() || !record.outcome)) throw new Error('Add an outcome and review notes before resolving.');
@@ -73,22 +76,28 @@ export function readReviews(storage) {
   } catch { throw new Error('The saved review list is unreadable or from a newer version. It has not been overwritten. Back up this browser’s storage before recovery.'); }
 }
 
-export function saveReview(storage, input, now = new Date().toISOString()) {
-  const records = readReviews(storage); // Read at save time to retain other tabs' completed writes.
+export function updateReviews(records, input, now = new Date().toISOString()) {
   const id = reviewId(input, input.target);
   const existing = records.find((record) => record.id === id);
-  if ((existing && input.revision !== existing.revision) || (!existing && input.revision !== undefined)) throw new Error('This review changed in another tab or was removed. Your draft has not been saved. Copy your new notes, then cancel and reopen the flag to review the latest version.');
+  if ((existing && input.revision !== existing.revision) || (!existing && input.revision !== undefined)) {
+    throw Object.assign(new Error('This review changed in another tab or was removed. Your draft has not been saved. Copy your new notes, then cancel and reopen the flag to review the latest version.'), { status: 409 });
+  }
   // Editing concern text must not silently replace the originally flagged content.
   const record = validateRecord({
     id, source: input.source, itemId: input.itemId, setId: input.setId, target: input.target, revision: (existing?.revision || 0) + 1,
     title: existing?.title ?? bounded(input.title, 2000, 'Title'),
     snapshot: existing?.snapshot ?? copy(input.snapshot),
+    ...pick(existing || input, ['examId', 'bankVersion']),
     reason: input.reason, note: bounded(input.note || '', 4000, 'Concern'),
     reference: bounded(input.reference || '', 2000, 'Reference'), status: input.status || 'open',
     outcome: input.outcome || '', resolution: bounded(input.resolution || '', 4000, 'Review notes'),
     createdAt: existing?.createdAt || now, updatedAt: now,
   });
-  const next = existing ? records.map((entry) => entry.id === id ? record : entry) : [...records, record];
+  return existing ? records.map((entry) => entry.id === id ? record : entry) : [...records, record];
+}
+
+export function saveReview(storage, input, now = new Date().toISOString()) {
+  const next = updateReviews(readReviews(storage), input, now);
   try { storage.setItem(REVIEW_KEY, JSON.stringify({ version: 1, records: next })); }
   catch { throw new Error('Could not save the content flag. Browser storage may be full or blocked. Your form is still open; copy your notes before leaving.'); }
   return next;

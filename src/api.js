@@ -3,7 +3,7 @@ export async function api(path, options = {}) {
   const headers = { ...options.headers, ...(!['GET', 'HEAD'].includes(method) ? { 'x-study-request': '1' } : {}) };
   const response = await fetch(path, { cache: 'no-store', ...options, headers });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Request failed.');
+  if (!response.ok) throw Object.assign(new Error(data.error || 'Request failed.'), { status: response.status });
   return data;
 }
 
