@@ -45,7 +45,7 @@ test('legacy PBQ option identifiers do not reveal the keyed answer', () => {
 test('expansion questions use numeric port options and specific rationales', () => {
   for (const q of bundle.questions.filter((q) => q.origin === 'securityplus-practical-expansion-v1' && q.question_kind === 'multiple_choice')) {
     const k = key(q.id);
-    for (const option of q.interaction.options) {
+    for (const option of q.interaction.options || []) {
       if (/^\d+\/(TCP|UDP)/.test(option.text)) assert.doesNotMatch(option.text, /\(/, q.id);
     }
     for (const text of Object.values(k.rationales)) assert.doesNotMatch(text, /does not satisfy the requirement/, q.id);

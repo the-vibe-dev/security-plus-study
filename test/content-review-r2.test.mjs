@@ -11,9 +11,6 @@ import { gradePractical, publicPracticalItem } from '../practical-grade.mjs';
 const bundle = parsePracticalPackage(fs.readFileSync(new URL('../security_plus_sy0_701_practical_site_upgrade.zip', import.meta.url)));
 const item = (id) => bundle.questions.find((q) => q.id === id);
 const key = (id) => bundle.answerKeys[id];
-const initials = (text) => text.split(/[\s/\-,]+/).filter(Boolean).map((word) => word.toUpperCase() === word && word.length > 1 ? word.toLowerCase() : word.toLowerCase().startsWith('ex') ? 'ex' : word[0].toLowerCase()).join('');
-const spells = (acronym, text) => { const letters = acronym.replace(/[^A-Z0-9]/g, '').toLowerCase().replace('2', 'c'); let from = 0; for (const ch of letters) { const at = initials(text).indexOf(ch, from); if (at < 0) return false; from = at + 1; } return true; };
-
 test('every selectable question and PBQ task offers at least four choices', () => {
   for (const q of bundle.questions) {
     const ui = q.interaction;
@@ -23,22 +20,31 @@ test('every selectable question and PBQ task offers at least four choices', () =
   }
 });
 
-test('acronym expansion questions use distractors that match the abbreviation letters', () => {
-  const acronymItems = bundle.questions.filter((q) => q.question_kind === 'multiple_choice' && /abbreviates a term as|what does KMS stand for/.test(q.prompt));
-  assert.ok(acronymItems.length >= 130);
-  for (const q of acronymItems) {
-    const match = /term as ([A-Za-z0-9/]+)[.?]/.exec(q.prompt) || /AWS ([A-Z]+),/.exec(q.prompt);
-    if (!match) continue; // e.g. "SOC 2", a report type rather than an initialism
-    const acronym = match[1];
-    const spelled = q.interaction.options.filter((option) => spells(acronym, option.text)).length;
-    assert.ok(spelled >= 3, `${q.id} ${acronym}: only ${spelled} options match the letters`);
-    assert.equal(new Set(q.interaction.options.map((option) => option.text)).size, 4, q.id);
+test('concept scenarios use five choices and glossary recall has no choices', () => {
+  const typed = bundle.questions.filter((q) => q.question_kind === 'multiple_choice' && q.interaction.type === 'text_entry');
+  assert.equal(typed.length, 138);
+  for (const q of typed) {
+    assert.equal(q.interaction.options, undefined, q.id);
+    assert.equal(gradePractical(q, key(q.id), key(q.id).correct_answer).correct, true, q.id);
   }
-  for (const q of bundle.questions.filter((q) => q.interaction.type === 'matching' && /decoys/.test(q.prompt))) {
-    assert.equal(q.interaction.right.length, q.interaction.left.length + 2, q.id);
-    assert.ok(new Set(Object.values(key(q.id).answer)).size === q.interaction.left.length, q.id);
-    assert.match(key(q.id).explanation, /Decoys:/);
+  const mttr = item('SPX-Q0119');
+  assert.equal(gradePractical(mttr, key(mttr.id), 'Mean Time to Repair').correct, true);
+  assert.equal(gradePractical(mttr, key(mttr.id), 'Mean Time to Recover').correct, false);
+  for (let n = 1; n <= 43; n++) {
+    const q = item(`SPX-MATCHING-${String(n).padStart(3, '0')}`);
+    assert.equal(q.interaction.type, 'single_select', q.id);
+    assert.equal(new Set(q.interaction.options).size, 5, q.id);
   }
+});
+
+test('port scenarios require a port decision without cross-choice clues', () => {
+  for (const q of bundle.questions.filter((q) => q.topic === 'ports_protocols')) {
+    assert.equal(q.interaction.type, 'single_select', q.id);
+    assert.ok(q.interaction.options.every((option) => /^\d+\/(TCP|UDP)$/.test(option)), q.id);
+    assert.equal(new Set(q.interaction.options.map((option) => option.split('/')[1])).size, 1, q.id);
+  }
+  assert.equal(key('SPX-PORTS_PRO-002').answer, '53/UDP');
+  assert.equal(key('SPX-PORTS_PRO-004').answer, '53/TCP');
 });
 
 test('numeric formula hints stay out of the displayed evidence and list-type context renders as a list', { timeout: 20000 }, async () => {
@@ -65,10 +71,21 @@ test('numeric formula hints stay out of the displayed evidence and list-type con
   } finally { await vite.close(); }
 });
 
-test('Windows log evidence names the event meaning instead of relying on memorized IDs', () => {
-  for (const id of ['SPX-SIEM_LOGS-001', 'SPX-SIEM_LOGS-002', 'SPX-SIEM_LOGS-003', 'SPX-SIEM_LOGS-004', 'SPX-SIEM_LOGS-014', 'SPX-SIEM_LOGS-015']) assert.match(item(id).stimulus.evidence, /EventID=\d{4} \([A-Z][^)]+\)/, id);
-  for (const id of ['SPX-SIEM_LOGS-019', 'SPX-SIEM_LOGS-020', 'SPX-SIEM_LOGS-021']) for (const event of item(id).stimulus.events.slice(0, 2)) assert.match(event.message, /^\d{4} \(/, `${id} ${event.id}`);
-  assert.match(item('SPX-CLI_TOOLS-033').prompt, /event ID 4625/);
+test('log scenarios show raw evidence and require correlation before drawing conclusions', () => {
+  const logon = item('SPX-SIEM_LOGS-002');
+  assert.match(logon.stimulus.evidence, /EventID=4624 LogonType=10/);
+  assert.doesNotMatch(logon.stimulus.evidence, /success|interactive|Remote Desktop/i);
+  assert.equal(key(logon.id).answer, 'Successful Remote Desktop logon');
+  const sequence = item('SPX-SIEM_LOGS-019');
+  assert.equal((sequence.stimulus.evidence.match(/EventID=4625.*198\.51\.100\.4/g) || []).length, 3);
+  assert.match(sequence.stimulus.evidence, /EventID=4624.*198\.51\.100\.4/);
+  assert.match(key(sequence.id).answer, /^Investigate possible unauthorized/);
+  for (const id of ['SPX-SIEM_LOGS-020', 'SPX-SIEM_LOGS-021']) {
+    const q = item(id);
+    assert.equal(q.stimulus.events.length, 5);
+    assert.ok(q.stimulus.events.every((row) => /^EventID=\d+/.test(row.message)));
+    assert.equal(gradePractical(q, key(id), ['e0', 'e2']).correct, false, id);
+  }
 });
 
 test('timeline items test timestamp normalization and say so; runbook ordering items carry their context', () => {

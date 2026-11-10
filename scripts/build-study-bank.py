@@ -13,7 +13,8 @@ def write_json(name,data):(ROOT/name).write_text(json.dumps(data,ensure_ascii=Fa
 def write_lines(name,rows):(ROOT/name).write_text(''.join(json.dumps(row,ensure_ascii=False)+'\n' for row in rows))
 def write_csv(name,rows,headers=None):
     with (ROOT/name).open('w',encoding='utf-8',newline='') as f:
-        writer=csv.DictWriter(f,fieldnames=headers or list(rows[0]),extrasaction='ignore');writer.writeheader();writer.writerows(rows)
+        fields = headers or list(dict.fromkeys(field for row in rows for field in row))
+        writer=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(rows)
 items=read_lines('bank/interactive_public.jsonl')
 keys=read_lines('answer_keys/interactive_private.jsonl')
 rows=read_rows('legacy/prep1_quiz.csv')+read_rows('legacy/prep2_quiz.csv')+read_rows('bank/new_quiz_questions_257_private_import.csv')
@@ -25,10 +26,15 @@ for row in rows:
     answer=[letter for letter in row['correct_option'] if letter in 'ABCDEF']
     public.append({'id':ident,'exam_code':'SY0-701','origin':'legacy-prep-1' if ident.startswith('SEC-Q') else 'legacy-prep-2' if ident.startswith('SEC2-Q') else 'securityplus-practical-expansion-v1','domain_id':domain,'domain_name':NAMES[domain],'objective_id':row['objective_id'],'topic':row.get('topic') or 'Foundational Security+','difficulty':row.get('difficulty','intermediate'),'question_kind':'multiple_choice','suggested_seconds':60,'points':1,'prompt':row['question'],'stimulus':{},'interaction':{'type':'multi_select' if len(answer)>1 else 'single_select','options':options,'select_count':len(answer)}})
     private.append({'id':ident,'answer':answer if len(answer)>1 else answer[0],'correct_answer':row['correct_answer'],'explanation':row.get('explanation',''),'rationales':{letter.upper():row.get('rationale_'+letter,'') for letter in 'abcdef' if row.get('option_'+letter)},'points':1,'grader':public[-1]['interaction']['type']})
+    if row.get('accepted_text'):
+        expansions = json.loads(row['accepted_text'])
+        assert isinstance(expansions, list) and expansions and all(isinstance(value, str) and value.strip() for value in expansions), ident
+        public[-1]['interaction'] = {'type':'text_entry', 'max_length':200, 'placeholder':'Enter the full expansion'}
+        private[-1].update(answer=expansions, rationales={}, grader='text_entry')
 write_lines('bank/knowledge_public.jsonl',public)
 write_lines('answer_keys/knowledge_private.jsonl',private)
 write_csv('legacy/merged_quiz_private_import.csv',rows)
-headers=['index']+[field for field in rows[0] if field!='index']
+headers=['index']+list(dict.fromkeys(field for row in rows for field in row if field not in {'index', 'accepted_text'}))
 write_csv('legacy/history_bowl_compatible_quiz_857_private_import.csv',[{'index':index+1,**row} for index,row in enumerate(rows)],headers)
 columns=['id','exam_code','domain_id','objective_id','topic','question_kind','difficulty','points','interaction_type','prompt','stimulus_json','interaction_json']
 write_csv('bank/interactive_index.csv',[{**q,'interaction_type':q['interaction']['type'],'stimulus_json':json.dumps(q['stimulus'],ensure_ascii=False),'interaction_json':json.dumps(q['interaction'],ensure_ascii=False)} for q in items],columns)
@@ -47,6 +53,11 @@ for number in range(1,11):
     write_json(name,exam)
 assert len(used)==900
 manifest=json.loads((ROOT/'PACKAGE_MANIFEST.json').read_text())
-manifest.update(date='2026-11-07',release_version='1.1.0',content_revision='sy701-study-2026-11-07-r2',new_by_domain={str(d):sum(q['domain_id']==d for q in items) for d in range(1,6)})
+manifest.update(
+    date='2026-11-10', release_version='1.2.0', content_revision='sy701-study-2026-11-10-r3',
+    new_by_domain={str(d):sum(q['domain_id']==d for q in items) for d in range(1,6)},
+    new_by_ui=dict(collections.Counter(q['interaction']['type'] for q in items)),
+    knowledge_by_ui=dict(collections.Counter(q['interaction']['type'] for q in public)),
+)
 write_json('PACKAGE_MANIFEST.json',manifest)
-print('Study bank v1.1.0: 857 knowledge questions, 639 interactive items, 50 PBQs; 10 fixed exam manifests.')
+print('Study bank v1.2.0: 857 knowledge questions, 639 interactive items, 50 PBQs; 10 fixed exam manifests.')

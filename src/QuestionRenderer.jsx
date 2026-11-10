@@ -15,6 +15,10 @@ export function expectedAnswerText(item, answer) {
   };
   switch (ui.type) {
     case 'single_select': return choices(ui.options, answer);
+    case 'text_entry': return Array.isArray(answer) ? answer[0] : answer;
+    case 'firewall_rules': return Array.isArray(answer?.solution_rules)
+      ? answer.solution_rules.map((rule) => `${rule.action.toUpperCase()} ${rule.proto.toUpperCase()}/${rule.port}  ${rule.src} → ${rule.dst}`).join('\n')
+      : answer;
     case 'multi_select': {
       const records = ui.options || [...(item.stimulus?.rows || []), ...(item.stimulus?.events || [])].map((row) => ({ id: row.id, text: `${row.id}: ${evidenceText(row)}` }));
       return Array.isArray(answer) ? answer.map((value) => choices(records, value)) : answer;
@@ -52,7 +56,7 @@ function StimulusValue({ value }) {
   return <span>{asText(value)}</span>;
 }
 
-export function EvidencePanel({ stimulus, prompt = '' }) {
+export function EvidencePanel({ stimulus, prompt = '', selection }) {
   if (!stimulus || !Object.keys(stimulus).length) return null;
   const rows = stimulus.rows || stimulus.events || stimulus.logs || stimulus.packets;
   const context = Object.entries(stimulus).filter(([key, value]) => !STIMULUS_HIDDEN.has(key) && value !== '' && value !== null && value !== undefined && !(key === 'scenario' && value === prompt) && !(Array.isArray(value) && value.length === 0));
@@ -60,7 +64,18 @@ export function EvidencePanel({ stimulus, prompt = '' }) {
   return <section className="practical-evidence" aria-label="Scenario evidence">
     {stimulus.scenario_md && <div className="practical-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>{stimulus.scenario_md}</ReactMarkdown></div>}
     {context.length > 0 && <div className="evidence-context">{context.map(([key, value]) => <div key={key} className={Array.isArray(value) || (typeof value === 'string' && value.length > 90) ? 'evidence-wide' : ''}><strong>{stimulusLabel(key)}</strong><StimulusValue value={value} /></div>)}</div>}
-    {Array.isArray(rows) && rows.length > 0 && <div className="evidence-scroll"><table className="evidence-table"><caption>Synthetic evidence records</caption><thead><tr><th scope="col">ID</th>{Object.keys(rows[0]).filter((key) => key !== 'id').map((key) => <th key={key} scope="col">{key.replaceAll('_', ' ')}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={row.id || index}><th scope="row">{row.id || index + 1}</th>{Object.keys(rows[0]).filter((key) => key !== 'id').map((key) => <td key={key}>{asText(row[key])}</td>)}</tr>)}</tbody></table></div>}
+    {Array.isArray(rows) && rows.length > 0 && <>
+      {selection && <p className="evidence-selection-instructions">{selection.instructions}</p>}
+      <div className="evidence-scroll"><table className="evidence-table">
+        <caption>Synthetic evidence records</caption>
+        <thead><tr>{selection && <th scope="col">Select</th>}<th scope="col">ID</th>{Object.keys(rows[0]).filter((key) => key !== 'id').map((key) => <th key={key} scope="col">{key.replaceAll('_', ' ')}</th>)}</tr></thead>
+        <tbody>{rows.map((row, index) => <tr key={row.id || index} className={selection?.chosen.includes(row.id) ? 'selected-evidence' : undefined}>
+          {selection && <td>{selection.candidates.includes(row.id) && <input type="checkbox" aria-label={`Select record ${row.id}`} checked={selection.chosen.includes(row.id)} disabled={selection.disabled} onChange={() => selection.toggle(row.id)} />}</td>}
+          <th scope="row">{row.id || index + 1}</th>
+          {Object.keys(rows[0]).filter((key) => key !== 'id').map((key) => <td key={key}>{asText(row[key])}</td>)}
+        </tr>)}</tbody>
+      </table></div>
+    </>}
     {Array.isArray(stimulus.exhibits) && stimulus.exhibits.map((exhibit) => <details className="evidence-exhibit" key={exhibit.id} open><summary>{exhibit.title}</summary><div className="practical-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>{exhibit.content_md}</ReactMarkdown></div></details>)}
   </section>;
 }
@@ -214,7 +229,7 @@ function FirewallQuestion({ item, response, onChange, disabled, onTestFlow }) {
   const [flowResult, setFlowResult] = useState('');
   const max = item.interaction.max_user_rules || 5;
   function patch(index, key, value) { onChange(rules.map((rule, i) => i === index ? { ...rule, [key]: value } : rule)); }
-  function add() { if (rules.length < max) onChange([...rules, { priority: (rules.length + 1) * 10, action: 'deny', protocol: 'tcp', source_cidr: '0.0.0.0/32', destination_cidr: '0.0.0.0/32', destination_port: 443 }]); }
+  function add() { if (rules.length < max) onChange([...rules, { priority: (rules.length + 1) * 10, action: 'deny', protocol: 'tcp', source_cidr: '0.0.0.0/32', destination_cidr: '0.0.0.0/32', destination_port: 1 }]); }
   function shift(index, direction) { const next = moveCard(rules, index, index + direction).map((rule, i) => ({ ...rule, priority: (i + 1) * 10 })); onChange(next); }
   async function testFlow() { try { const result = await onTestFlow(rules, { ...flow, port: Number(flow.port) }); setFlowResult(`Simulated decision: ${result.decision.toUpperCase()}. First matching rule wins; default is deny.`); } catch (err) { setFlowResult(err.message); } }
   return <div className="firewall-builder"><div className="firewall-heading"><div><strong>Firewall rule editor</strong><small>Ordered, first-match evaluation · stateful return traffic assumed</small></div><span>Default: DENY</span></div><div className="firewall-scroll"><table className="firewall-table"><thead><tr><th>Order</th><th>Action</th><th>Protocol</th><th>Source CIDR</th><th>Destination CIDR</th><th>Port</th><th>Move / remove</th></tr></thead><tbody>{rules.map((rule, index) => <tr key={index}><td>{index + 1}</td><td><select aria-label={`Rule ${index + 1} action`} disabled={disabled} value={rule.action} onChange={(event) => patch(index, 'action', event.target.value)}><option value="allow">Allow</option><option value="deny">Deny</option></select></td><td><select aria-label={`Rule ${index + 1} protocol`} disabled={disabled} value={rule.protocol} onChange={(event) => patch(index, 'protocol', event.target.value)}><option value="tcp">TCP</option><option value="udp">UDP</option></select></td><td><input aria-label={`Rule ${index + 1} source CIDR`} disabled={disabled} value={rule.source_cidr} onChange={(event) => patch(index, 'source_cidr', event.target.value)} /></td><td><input aria-label={`Rule ${index + 1} destination CIDR`} disabled={disabled} value={rule.destination_cidr} onChange={(event) => patch(index, 'destination_cidr', event.target.value)} /></td><td><input aria-label={`Rule ${index + 1} destination port`} inputMode="numeric" disabled={disabled} value={rule.destination_port} onChange={(event) => patch(index, 'destination_port', event.target.value)} /></td><td className="rule-actions"><button type="button" aria-label={`Move rule ${index + 1} up`} disabled={disabled || index === 0} onClick={() => shift(index, -1)}>↑</button><button type="button" aria-label={`Move rule ${index + 1} down`} disabled={disabled || index === rules.length - 1} onClick={() => shift(index, 1)}>↓</button><button type="button" aria-label={`Remove rule ${index + 1}`} disabled={disabled} onClick={() => onChange(rules.filter((_, i) => i !== index).map((part, i) => ({ ...part, priority: (i + 1) * 10 })))}>×</button></td></tr>)}</tbody></table></div><button className="practical-inline-button" type="button" disabled={disabled || rules.length >= max} onClick={add}>+ Add rule</button><div className="traffic-test"><strong>Test traffic against your rules</strong><div><label>Source IP<input aria-label="Test source IP" value={flow.src} onChange={(event) => setFlow({ ...flow, src: event.target.value })} placeholder="192.0.2.10" /></label><label>Destination IP<input aria-label="Test destination IP" value={flow.dst} onChange={(event) => setFlow({ ...flow, dst: event.target.value })} placeholder="198.51.100.10" /></label><label>Protocol<select aria-label="Test protocol" value={flow.proto} onChange={(event) => setFlow({ ...flow, proto: event.target.value })}><option value="tcp">TCP</option><option value="udp">UDP</option></select></label><label>Port<input aria-label="Test port" inputMode="numeric" value={flow.port} onChange={(event) => setFlow({ ...flow, port: event.target.value })} /></label><button type="button" disabled={disabled} onClick={testFlow}>Test traffic</button></div>{flowResult && <p role="status">{flowResult}</p>}</div></div>;
@@ -227,9 +242,16 @@ function LegacyPbqQuestion({ item, response, onChange, disabled }) {
 }
 
 export function QuestionRenderer({ item, response, onChange, feedback, reviewContext, disabled = false, onSimulate = async () => ({ accepted: false }), onTestFlow = async () => ({ decision: 'deny' }) }) {
-  const type = item.interaction.type;
-  return <article className="practical-question"><div className="question-taxonomy"><span>Domain {item.domain_id}</span><span>Objective {item.objective_id || '—'}</span><span>{type.replaceAll('_', ' ')}</span></div><h2>{item.prompt}</h2><FlagContent key={item.id} item={item} reviewContext={reviewContext} /><EvidencePanel stimulus={item.stimulus} prompt={item.prompt} />
-    {['single_select', 'multi_select'].includes(type) && <SelectQuestion item={item} response={response} onChange={onChange} disabled={disabled} />}
+  const { type, candidate_ids, min_selections, max_selections } = item.interaction;
+  const rows = item.stimulus?.rows || item.stimulus?.events;
+  const chosen = Array.isArray(response) ? response : [];
+  const selection = type === 'multi_select' && candidate_ids?.length && candidate_ids.every((id) => rows?.some((row) => row.id === id)) ? {
+    chosen, candidates: candidate_ids, disabled,
+    instructions: min_selections === max_selections ? `Select ${min_selections} ${min_selections === 1 ? 'record' : 'records'}.` : `Select ${min_selections}–${max_selections} records.`,
+    toggle: (id) => onChange(chosen.includes(id) ? chosen.filter((entry) => entry !== id) : [...chosen, id]),
+  } : undefined;
+  return <article className="practical-question"><div className="question-taxonomy"><span>Domain {item.domain_id}</span><span>Objective {item.objective_id || '—'}</span><span>{type.replaceAll('_', ' ')}</span></div><h2>{item.prompt}</h2><FlagContent key={item.id} item={item} reviewContext={reviewContext} /><EvidencePanel stimulus={item.stimulus} prompt={item.prompt} selection={selection} />
+    {['single_select', 'multi_select'].includes(type) && !selection && <SelectQuestion item={item} response={response} onChange={onChange} disabled={disabled} />}
     {type === 'text_entry' && <label className="practical-entry"><span>Type the full expansion</span><input value={response || ''} disabled={disabled} maxLength={item.interaction.max_length || 200} placeholder={item.interaction.placeholder || 'Your answer'} onChange={(event) => onChange(event.target.value)} autoComplete="off" /></label>}
     {type === 'numeric' && <label className="practical-entry"><span>Calculate your answer {item.interaction.unit && `(${item.interaction.unit})`}</span><input value={response ?? ''} disabled={disabled} inputMode="decimal" placeholder="Enter a number" onChange={(event) => onChange(event.target.value)} /></label>}
     {type === 'matching' && <MatchingQuestion item={item} response={response} onChange={onChange} disabled={disabled} />}

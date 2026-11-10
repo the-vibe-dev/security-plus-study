@@ -44,7 +44,7 @@ test('accepted acronym aliases and independent risk-estimation orders receive fu
 });
 test('scenarios distinguish permissions, EKU, issuer revocation and elapsed repair duration', () => {
   assert.match(item('SPX-IDENTITY_-016').stimulus.evidence, /read-only.*member of a write-privileged/);
-  assert.match(item('SPX-PKI_CRYPT-014').stimulus.evidence, /only serverAuth.*omits clientAuth/);
+  assert.match(item('SPX-PKI_CRYPT-014').stimulus.evidence, /TLS Web Server Authentication[\s\S]*TLS Web Client Authentication/);
   assert.match(key('SPX-IDENTITY_-015').answer, /issuing authorization server/);
   for (const id of ['SPX-SIEM_LOGS-020','SPX-SIEM_LOGS-021']) {
     const events = item(id).stimulus.events.slice(0,2);
@@ -57,7 +57,7 @@ test('scenarios distinguish permissions, EKU, issuer revocation and elapsed repa
     assert.match(q.prompt, /elapsed repair hours/);
   }
 });
-test('architecture diagrams draw zones and typed links between known nodes, and minimal firewall scope is explicit', () => {
+test('architecture diagrams draw typed links and firewall tasks permit incorrect rule sets', () => {
   for (const q of bundle.questions.filter((q) => q.interaction.type === 'topology')) {
     const ids = new Set([...q.interaction.slots.map((slot) => slot.id), ...q.stimulus.anchors.map((anchor) => anchor.id)]);
     assert.ok(q.stimulus.zones.length >= 4 && q.stimulus.anchors.length >= 1 && q.stimulus.connections.length >= 5, q.id);
@@ -67,8 +67,8 @@ test('architecture diagrams draw zones and typed links between known nodes, and 
     assert.match(key(q.id).explanation, /Primary traffic path:/);
   }
   for (const q of bundle.questions.filter((q) => q.interaction.type === 'firewall_rules')) {
-    assert.match(q.prompt, /exactly one narrowly scoped allow rule/);
-    assert.equal(q.interaction.max_user_rules, 1);
+    assert.doesNotMatch(q.prompt, /exactly one|do not add|no separate response rule/i);
+    assert.ok(q.interaction.max_user_rules > key(q.id).answer.solution_rules.length);
   }
 });
 test('source packs and combined bank retain identical stems, keys and PBQ tasks', () => {

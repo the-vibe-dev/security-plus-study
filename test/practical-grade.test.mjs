@@ -28,12 +28,12 @@ test('all 1,546 public items match private keys and the server grader gives full
   }
   assert.equal(counts.simulated_cli, 43);
   assert.equal(counts.firewall_rules, 48);
-  assert.equal(counts.matching, 101);
+  assert.equal(counts.matching, 31);
   assert.equal(counts.ordering, 50);
   assert.equal(counts.topology, 12);
   assert.equal(counts.timeline, 12);
   assert.equal(counts.numeric, 74);
-  assert.equal(counts.text_entry, 52);
+  assert.equal(counts.text_entry, 190);
   assert.equal(counts.legacy_pbq, 50);
 });
 

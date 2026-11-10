@@ -13,11 +13,11 @@ def zip_bytes(files):
     stream=io.BytesIO()
     with ZipFile(stream,'w',ZIP_DEFLATED) as archive:
         for name,data in sorted(files.items()):
-            info=ZipInfo(name,date_time=(2026,11,7,0,0,0));info.compress_type=ZIP_DEFLATED;archive.writestr(info,data)
+            info=ZipInfo(name,date_time=(2026,11,10,0,0,0));info.compress_type=ZIP_DEFLATED;archive.writestr(info,data)
     return stream.getvalue()
 def json_bytes(value):return (json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode()
 def render_quiz(rows):
-    parts=['# Security+ study questions — v1.1.0\n\nUnofficial study material; verify uncertain points against trusted sources.\n']
+    parts=['# Security+ study questions — v1.2.0\n\nUnofficial study material; verify uncertain points against trusted sources.\n']
     for row in rows:
         parts += [f"## {row['item_id']}\n\n{row['question']}\n"]
         parts += [f"- {letter.upper()}. {row['option_'+letter]}" for letter in 'abcdef' if row.get('option_'+letter)]
@@ -25,7 +25,7 @@ def render_quiz(rows):
         parts += [f"{letter.upper()}: {row.get('rationale_'+letter,'')}\n" for letter in 'abcdef' if row.get('option_'+letter)]
     return '\n'.join(parts).encode()
 def render_pbqs(pbqs,answers):
-    out=['# Original Security+ PBQ '+('solutions' if answers else 'scenarios')+' — v1.1.0\n']
+    out=['# Original Security+ PBQ '+('solutions' if answers else 'scenarios')+' — v1.2.0\n']
     for p in pbqs:
         out += [f"## {p['id']} — {p['title']}\n",p['scenario_md']]
         for exhibit in p['exhibits']:out += [f"### {exhibit['title']}\n",exhibit['content_md']]
@@ -57,7 +57,7 @@ with TemporaryDirectory(prefix='secplus-rebuild-') as directory:
     reference.write_text(text)
     result=subprocess.run([sys.executable,str(source/'tools/build_package.py')],capture_output=True,text=True,check=True)
     subprocess.run([sys.executable,str(source/'tools/validate_package.py')],check=True)
-    manifest=json.loads((source/'PACKAGE_MANIFEST.json').read_text());manifest.update(date='2026-11-07',release_version='1.1.0',content_revision='sy701-study-2026-11-07-r2')
+    manifest=json.loads((source/'PACKAGE_MANIFEST.json').read_text());manifest.update(date='2026-11-10',release_version='1.2.0',content_revision='sy701-study-2026-11-10-r3')
     (source/'PACKAGE_MANIFEST.json').write_bytes(json_bytes(manifest))
     # Original prep packs, markdown study copies and their cryptographic manifests stay synchronized.
     for number,name,prefix,csvname,pbqname,manifestname in [(1,'security_plus_sy0_701_study_pack.zip','security_plus_sy0_701/','security_plus_quiz.csv','security_plus_pbqs.json','PACK_MANIFEST.json'),(2,'test_prep_2_security_plus_sy0_701.zip','test_prep_2_security_plus_sy0_701/','test_prep_2_quiz.csv','test_prep_2_pbqs.json','test_prep_2_manifest.json')]:
@@ -70,7 +70,7 @@ with TemporaryDirectory(prefix='secplus-rebuild-') as directory:
             if 'quiz_review.md' in lower:files[n]=render_quiz(rows)
             if 'pbq_questions.md' in lower:files[n]=render_pbqs(pbqs,False)
             if 'pbq_answer_key.md' in lower:files[n]=render_pbqs(pbqs,True)
-        m=json.loads(files[prefix+manifestname]);m['package_version']='1.1.0'
+        m=json.loads(files[prefix+manifestname]);m['package_version']='1.2.0'
         m['files']=[{'name':n.removeprefix(prefix),'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()} for n,data in sorted(files.items()) if n!=prefix+manifestname]
         files[prefix+manifestname]=json_bytes(m);(ROOT/name).write_bytes(zip_bytes(files))
     files={str(p.relative_to(base)):p.read_bytes() for p in source.rglob('*') if p.is_file() and '__pycache__' not in p.parts}

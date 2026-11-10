@@ -188,7 +188,7 @@ function selectQuestions(content, state, input) {
     (!input.bookmarkedOnly || progressFor(state, item.id).bookmarked) &&
     (!input.wrongOnly || progressFor(state, item.id).incorrectCount > 0) &&
     (!input.excludeRecentlySeen || !recent.has(item.id)));
-  if (input.mcqOnly) candidates = candidates.filter((item) => item.question_kind === 'multiple_choice');
+  if (input.mcqOnly) candidates = candidates.filter((item) => item.question_kind === 'multiple_choice' && ['single_select', 'multi_select'].includes(item.interaction.type));
   if (input.pbqOnly) candidates = candidates.filter((item) => item.question_kind === 'pbq' || item.question_kind === 'legacy_pbq');
   if (!candidates.length) error(400, 'No questions match those practice filters.');
   const count = Number(input.count || 10);

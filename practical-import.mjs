@@ -4,7 +4,9 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 
-export const PRACTICAL_VERSION = 'sy701-study-2026-11-07-r2';
+export const PRACTICAL_VERSION = 'sy701-study-2026-11-10-r3';
+// Keep extra-assessment allocations stable when the study content is revised.
+const COVERAGE_ORDER_SEED = 'sy701-study-2026-11-07-r2';
 const PREFIX = 'security_plus_practical_expansion/';
 const ID_PATTERN = /^(SEC(?:2)?-Q\d{3}|SEC(?:2)?-PBQ-\d{3}|SPX-[A-Z0-9_-]+)$/;
 
@@ -100,8 +102,8 @@ export function parsePracticalPackage(buffer, existingLibrary = null) {
   for (const category of Object.values(drills.categories || {})) assert(category.question_ids.every((id) => allIds.has(id)), 'Drill catalog references a missing question.');
   // Freeze additional coverage from the full bank at import time. The ten supplied manifests remain unchanged.
   const remaining = questions.filter((item) => !used.has(item.id)).sort((a, b) => {
-    const ha = createHash('sha256').update(`${PRACTICAL_VERSION}:${a.id}`).digest('hex');
-    const hb = createHash('sha256').update(`${PRACTICAL_VERSION}:${b.id}`).digest('hex');
+    const ha = createHash('sha256').update(`${COVERAGE_ORDER_SEED}:${a.id}`).digest('hex');
+    const hb = createHash('sha256').update(`${COVERAGE_ORDER_SEED}:${b.id}`).digest('hex');
     return ha.localeCompare(hb);
   });
   assert(remaining.length === 646, 'Remaining corpus count mismatch.');
